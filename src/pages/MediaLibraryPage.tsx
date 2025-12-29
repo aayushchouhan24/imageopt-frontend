@@ -20,16 +20,24 @@ import {
   Image as ImageIcon,
   Clock,
   FolderOpen,
+  Eye,
+  Lock,
+  Unlock,
+  RefreshCw,
 } from 'lucide-react';
 import { formatBytes } from '@/lib/utils';
 import { UploadModal } from '../components/UploadModal';
+import { AssetDetailModal } from '@/components/assets/AssetDetailModal';
 import { toast } from 'sonner';
+import type { Asset } from '@/types/asset';
 
 export function MediaLibraryPage() {
   const [view, setView] = useState<'grid' | 'list'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -90,6 +98,68 @@ export function MediaLibraryPage() {
     toast.success('URL copied', {
       description: 'CDN URL has been copied to clipboard',
     });
+  };
+
+  const openAssetDetails = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setDetailModalOpen(true);
+  };
+
+  const handlePrivacyToggle = async (assetId: string, makePrivate: boolean, folder?: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('Not authenticated. Please log in again.');
+    }
+    
+    const endpoint = makePrivate ? 'make-private' : 'make-public';
+    const url = folder
+      ? `http://localhost:5000/api/assets/${assetId}/${endpoint}?folder=${folder}`
+      : `http://localhost:5000/api/assets/${assetId}/${endpoint}`;
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update privacy');
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ['assets'] });
+    return response.json();
+  };
+
+  const handleInvalidateCache = async (assetId: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('Not authenticated. Please log in again.');
+    }
+
+    const response = await fetch(
+      `http://localhost:5000/api/assets/${assetId}/invalidate-cache`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to invalidate cache');
+    }
+
+    return response.json();
+  };
+
+  const handleDeleteFromModal = async (assetId: string) => {
+    await deleteMutation.mutateAsync(assetId);
   };
 
   return (
@@ -184,7 +254,7 @@ export function MediaLibraryPage() {
             <span className="flex-1">Name</span>
             <span className="w-24">Size</span>
             <span className="w-32">Date</span>
-            <span className="w-24">Actions</span>
+            <span className="w-auto">Actions</span>
           </div>
         )}
 
@@ -256,11 +326,21 @@ export function MediaLibraryPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="w-24 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openAssetDetails(asset)}
+                      title="View Details"
+                      className="h-8 w-8 text-zinc-500 hover:text-white hover:bg-zinc-800"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => copyUrl(asset.cloudfrontUrl)}
+                      title="Copy URL"
                       className="h-8 w-8 text-zinc-500 hover:text-white hover:bg-zinc-800"
                     >
                       <Copy className="h-4 w-4" />
@@ -269,6 +349,7 @@ export function MediaLibraryPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => window.open(asset.cloudfrontUrl, '_blank')}
+                      title="Open in New Tab"
                       className="h-8 w-8 text-zinc-500 hover:text-white hover:bg-zinc-800"
                     >
                       <ExternalLink className="h-4 w-4" />
@@ -278,6 +359,7 @@ export function MediaLibraryPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => restoreMutation.mutate(asset._id)}
+                        title="Restore"
                         className="h-8 w-8 text-emerald-500 hover:text-emerald-400 hover:bg-zinc-800"
                       >
                         <RotateCcw className="h-4 w-4" />
@@ -287,6 +369,7 @@ export function MediaLibraryPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => deleteMutation.mutate(asset._id)}
+                        title="Delete"
                         className="h-8 w-8 text-zinc-500 hover:text-red-500 hover:bg-zinc-800"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -323,7 +406,17 @@ export function MediaLibraryPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => openAssetDetails(asset)}
+                        title="View Details"
+                        className="h-8 w-8 bg-zinc-800/80 text-white hover:bg-zinc-700"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => copyUrl(asset.cloudfrontUrl)}
+                        title="Copy URL"
                         className="h-8 w-8 bg-zinc-800/80 text-white hover:bg-zinc-700"
                       >
                         <Copy className="h-4 w-4" />
@@ -332,11 +425,20 @@ export function MediaLibraryPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => window.open(asset.cloudfrontUrl, '_blank')}
+                        title="Open"
                         className="h-8 w-8 bg-zinc-800/80 text-white hover:bg-zinc-700"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     </div>
+                    {asset.isPrivate && (
+                      <div className="absolute top-2 right-2">
+                        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                          <Lock className="w-3 h-3 mr-1" />
+                          Private
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                   <div className="p-3">
                     <p className="text-sm font-medium text-white truncate">{asset.name}</p>
@@ -367,6 +469,17 @@ export function MediaLibraryPage() {
       </div>
 
       <UploadModal open={uploadModalOpen} onClose={() => setUploadModalOpen(false)} />
+
+      {selectedAsset && (
+        <AssetDetailModal
+          asset={selectedAsset}
+          open={detailModalOpen}
+          onOpenChange={setDetailModalOpen}
+          onPrivacyToggle={handlePrivacyToggle}
+          onInvalidateCache={handleInvalidateCache}
+          onDelete={handleDeleteFromModal}
+        />
+      )}
     </div>
   );
 }
