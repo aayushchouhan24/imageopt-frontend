@@ -28,6 +28,7 @@ import {
 import { formatBytes } from '@/lib/utils';
 import { UploadModal } from '../components/UploadModal';
 import { AssetDetailModal } from '@/components/assets/AssetDetailModal';
+import { AssetImage } from '@/components/assets/AssetImage';
 import { toast } from 'sonner';
 import type { Asset } from '@/types/asset';
 
@@ -283,8 +284,8 @@ export function MediaLibraryPage() {
                   
                   {/* Thumbnail */}
                   <div className="h-12 w-12 rounded-lg bg-zinc-800 overflow-hidden shrink-0">
-                    <img
-                      src={asset.cloudfrontUrl}
+                    <AssetImage
+                      asset={asset}
                       alt={asset.name}
                       className="h-full w-full object-cover"
                       loading="lazy"
@@ -389,8 +390,8 @@ export function MediaLibraryPage() {
                   }`}
                 >
                   <div className="aspect-square bg-zinc-900 overflow-hidden relative">
-                    <img
-                      src={asset.cloudfrontUrl}
+                    <AssetImage
+                      asset={asset}
                       alt={asset.name}
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                       loading="lazy"

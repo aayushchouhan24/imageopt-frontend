@@ -3,6 +3,7 @@ import { apiClient } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AssetImage } from '@/components/assets/AssetImage';
 import { 
   Upload,
   Calendar
@@ -127,8 +128,8 @@ export function DashboardPage() {
                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
                   >
                     <div className="h-10 w-10 rounded-lg bg-muted overflow-hidden shrink-0">
-                      <img
-                        src={asset.cloudfrontUrl}
+                      <AssetImage
+                        asset={asset}
                         alt={asset.name}
                         className="h-full w-full object-cover"
                         loading="lazy"

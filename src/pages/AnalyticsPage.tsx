@@ -3,6 +3,7 @@ import { apiClient } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AssetImage } from '@/components/assets/AssetImage';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -228,8 +229,8 @@ export function AnalyticsPage() {
 
                 {/* Thumbnail */}
                 <div className="h-12 w-12 rounded-lg bg-zinc-800 overflow-hidden shrink-0">
-                  <img
-                    src={asset.cloudfrontUrl}
+                  <AssetImage
+                    asset={asset}
                     alt={asset.name}
                     className="h-full w-full object-cover"
                     loading="lazy"

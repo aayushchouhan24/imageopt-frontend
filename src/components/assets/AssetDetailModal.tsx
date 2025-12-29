@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { AssetImage } from '@/components/assets/AssetImage';
 import {
   Copy,
   Download,
@@ -267,8 +268,8 @@ export function AssetDetailModal({
           <TabsContent value="preview" className="space-y-4">
             <div className="bg-zinc-950 rounded-lg p-4 flex items-center justify-center" style={{ minHeight: '300px' }}>
               {asset.type === 'image' ? (
-                <img
-                  src={asset.cloudfrontUrl}
+                <AssetImage
+                  asset={asset}
                   alt={asset.name}
                   style={{ maxHeight: '400px' }}
                   className="max-w-full object-contain rounded-md"
